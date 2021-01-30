@@ -5,9 +5,8 @@ import pandas as pd
 import numpy as np
 import itertools
 import re
-from snapy import MinHash, LSH
 from datasketch import MinHash, MinHashLSH
-file = "news_articles_small.csv"
+file = "news_articles_large.csv"
 
 data = pd.read_csv(file)
 
@@ -33,18 +32,23 @@ for i in range(0, len(data)):
 # Default, use optimizer in constructor
 threshold = 0.8
 lsh = MinHashLSH(threshold=threshold, num_perm=num_perm)
-# Params adjusts the number of bands and size of each band (has to be smaller than num_perms)
-# lsh = MinHashLSH(threshold=threshold, num_perm=num_perm, params=(1,256))
+# Params adjusts the number of bands and size of each band (has to be smaller than num_perms).
+# Using this will ignore threshold.
+# lsh = MinHashLSH(threshold=threshold, num_perm=num_perm, params=(1,8))
 
 for i in range(0, len(mh_list)):
-    lsh.insert('doc'+str(i), mh_list[i])
+    lsh.insert('doc_'+str(i), mh_list[i])
 
+df_results = pd.DataFrame(columns = ['query', 'duplicates'])
 count = 0
 for i in range(0, len(mh_list)):
     results = lsh.query(mh_list[i])
     if len(results) > 1:
-        print("Similarity > ", threshold, "for query doc", i, ": ", results)
+        # print("Similarity > ", threshold, "for query doc", i, ": ", results)
         count += len(results) - 1
-        #TODO: save as csv in format specified
+        temp = pd.DataFrame({'query': 'doc_'+str(i), 'duplicates': [results]})
+        df_results = df_results.append(temp, ignore_index=True)
 
-print("# duplicates found for all queries: ", count)
+print(df_results)
+df_results.to_csv("results.csv")
+print("# duplicates found for all queries with (b,r) = ({},{}): {}".format(lsh.b, lsh.r, count))

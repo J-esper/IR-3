@@ -3,7 +3,6 @@ import numpy as np
 import itertools
 import re
 from matplotlib import pyplot as plt
-from snapy import MinHash, LSH
 
 file = "news_articles_small.csv"
 
